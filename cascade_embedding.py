@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -8,7 +9,8 @@ import pickle
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 model = SentenceTransformer('paraphrase-distilroberta-base-v1')
-
+logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', filename='pca_test.log', level=logging.INFO,
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 def embed_cascades_text():
 	directory = os.fsencode(os.path.join(ROOT_DIR, 'twitter-raw-data/Twitter/'))
@@ -54,6 +56,7 @@ def user_embedding(users_dict : dict):
 	user_ids = []
 	users_bio = None
 	users_tweets_embed = None
+	logging.info("start embedding.")
 	for user_id, user_info in users_dict.items():
 		user_ids += user_id
 		user_bio_embed = model.encode(user_info['description'])
@@ -68,11 +71,11 @@ def user_embedding(users_dict : dict):
 		pca = PCA(n_components=200)
 		users_bio = pca.fit_transform(users_bio)
 		users_tweets_embed = pca.fit_transform(users_tweets_embed)
-		print(users_bio)
-		print(users_tweets_embed)
-
+		
+		logging.info("users bio: {0}".format(users_bio))
+		logging.info("users tweets embed".format(users_tweets_embed))
+		
 user_dict = pickle.load(open( os.path.join(ROOT_DIR, '../../Representations/users_data.p'), "rb"))
-print(user_dict)
 user_embedding(user_dict)
 		
 	
