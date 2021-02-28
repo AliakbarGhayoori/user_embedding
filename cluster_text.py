@@ -142,22 +142,34 @@ def users_clustering(users_ids, users_bio, users_tweet, my_data):
 	with open('results1_text.txt', 'w') as f:
 		f.write("\n".join(str(result)))
 
-def cluster_from_pickle(number_of_clusters = 3600):
+def cluster_from_pickle(number_of_clusters = 2):
 	user_features = pickle.load(open(os.path.join(ROOT_DIR, 'users_feature.p'), 'rb'))
-	users_dataset = np.array(list(user_features.values()))
+	
+	users_features_vectors = list(user_features.values())
+	users_dataset = np.array(users_features_vectors)
 	kproto_init = kprototypes.KPrototypes(n_clusters=number_of_clusters, init="Huang", verbose=2, n_init=1)
 	result = kproto_init.fit_predict(users_dataset, categorical=[0, 1, 3, 6])
-	cluster_vectors = np.array([[0. for i in range(len(users_dataset[0]))] for i in range(number_of_clusters)])
+	
+	clustering_result = {}
 	for i in range(len(result)):
-		cluster_vectors[result[i]] = np.add(cluster_vectors[result[i]], users_dataset[i])
-	return cluster_vectors
+		if result[i] in clustering_result:
+			clustering_result[result[i]] += [users_features_vectors[i]]
+		else:
+			clustering_result[result[i]] = [users_features_vectors[i]]
+	file_to_write = open('users_vectprs_clustering.p', 'wb')
+	pickle.dump(clustering_result, file_to_write)
+	
+	# cluster_vectors = np.array([[0. for i in range(len(users_dataset[0]))] for i in range(number_of_clusters)])
+	# for i in range(len(result)):
+	# 	cluster_vectors[result[i]] = np.add(cluster_vectors[result[i]], users_dataset[i])
+	# return cluster_vectors
 	
 	
 	
 if __name__ == '__main__':
-	user_dict = pickle.load(open( os.path.join(ROOT_DIR, 'users_data.p'), "rb")) #give address to users_data.p here.
-	user_ids, users_bio, users_tweet = user_embedding(user_dict)
-	users_feature_exctraction(user_ids, users_bio, users_tweet, user_dict)
+	# user_dict = pickle.load(open( os.path.join(ROOT_DIR, 'users_data.p'), "rb")) #give address to users_data.p here.
+	# user_ids, users_bio, users_tweet = user_embedding(user_dict)
+	# users_feature_exctraction(user_ids, users_bio, users_tweet, user_dict)
 	cluster_from_pickle()
 	
 	
