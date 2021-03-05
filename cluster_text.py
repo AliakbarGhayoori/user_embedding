@@ -8,7 +8,7 @@ from nose.tools import assert_equal
 from kmodes import kprototypes
 import pandas as pd
 from sklearn.neighbors._dist_metrics import DistanceMetric
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, KMeans
 import gower
 from sklearn.preprocessing import MaxAbsScaler
 
@@ -215,6 +215,34 @@ def gower_distance(X):
 
     return np.array(individual_variable_distances).mean(0)
 
+def scikit_clustering_ver2(number_of_clusters=3600):
+    user_features = pickle.load(
+    open(os.path.join(ROOT_DIR, 'users_feature.p'), 'rb'))
+    users_features_vectors = list(user_features.values())
+    users_dataset = np.array(users_features_vectors)
+    df = pd.DataFrame(users_dataset)
+    df[0] = df[0].astype('category')
+    df[1] = df[1].astype('category')
+    df[3] = df[3].astype('category')
+    df[6] = df[6].astype('category')
+    
+    abs_scaler = MaxAbsScaler()
+    abs_scaler.fit(df[[2,4,5,7,8,9]])
+    df[[2,4,5,7,8,9]] = abs_scaler.transform(df[[2,4,5,7,8,9]])
+    
+    clustering = KMeans(n_clusters=number_of_clusters, verbose=1).fit(df)
+
+    result = clustering.labels_
+    logging.info("result: {0}".format(result))
+    clustering_result = {}
+    for i in range(len(result)):
+        if result[i] in clustering_result:
+            clustering_result[result[i]] += [users_features_vectors[i]]
+        else:
+            clustering_result[result[i]] = [users_features_vectors[i]]
+    file_to_write = open('users_vectors_clustering.p', 'wb')
+    pickle.dump(clustering_result, file_to_write)
+
 
 def scikit_clustering(number_of_clusters=3600):
     user_features = pickle.load(
@@ -233,7 +261,7 @@ def scikit_clustering(number_of_clusters=3600):
     print(df.iloc[:,[0]].dtypes[0])
     
     clustering = AgglomerativeClustering(
-        n_clusters=number_of_clusters, affinity=gower.gower_matrix, linkage='complete').fit(df)
+        n_clusters=number_of_clusters, affinity=gower.gower_matrix, linkage='complete'  ).fit(df)
 
     result = clustering.labels_
     clustering_result = {}
@@ -249,7 +277,7 @@ if __name__ == '__main__':
    # user_dict = pickle.load(open( os.path.join(ROOT_DIR, 'users_data.p'), "rb")) #give address to users_data.p here.
    # user_ids, users_bio, users_tweet = user_embedding(user_dict)
    # users_feature_exctraction(user_ids, users_bio, users_tweet, user_dict)
-    scikit_clustering()
+    scikit_clustering_ver2()
 
 
 # user_embedding({'12': {'description':'hi to you', 'cascades_feature':[[12, 1, 'this is a test']]},'13': {'description':'hi to me', 'cascades_feature':[[12, 1, 'this is not a test']]}})
